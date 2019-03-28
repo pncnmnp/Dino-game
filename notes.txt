@@ -1,0 +1,5 @@
+def ground_load(self):
+	pieceHeight, self.scroll_ground = self.ground.get_rect()[2], self.width
+	pieceY = self.scroll_ground%pieceHeight - pieceHeight
+	for movement in range(pieceY, self.width, pieceHeight):
+		self.display.blit(self.ground, (movement, self.height*0.52 + 75))
