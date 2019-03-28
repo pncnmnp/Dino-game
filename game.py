@@ -4,10 +4,12 @@ from random import shuffle, uniform
 
 '''
 TODO:
+>> infinite vertical scrolling
+>> add 'birds' obstacle
+>> training AI to play this game
 >> pause feature [ done ]
 >> high score feature [ done ]
->> infinite vertical scrolling
->> game sound
+>> game sound [ done ]
 '''
 
 class Characters(pygame.sprite.Sprite):
@@ -108,6 +110,7 @@ class Canvas:
 					self.crashed = True
 				if event.type == pygame.KEYDOWN:
 					if event.key == pygame.K_UP:
+						self.jump_sound.play()
 						if not self.is_duck:
 							if self.velocity == 1: self.velocity = 10
 							self.is_jump = True
@@ -118,16 +121,20 @@ class Canvas:
 					if event.key == pygame.K_p:
 						paused = not paused
 			if paused == False:
-				self.display.fill(self.PAINT)
-				self.load_elements()
-				self.check_collision()
-				self.x += 2
+				self.not_paused()
 			elif paused == True:
 				self.load_paused_img()
 			pygame.display.update()
 			self.clock.tick(self.fps)
+		self.game_over_sound.play()
 		self.save_highscore()
 		self.quit_message()
+
+	def not_paused(self):
+		self.display.fill(self.PAINT)
+		self.load_elements()
+		self.check_collision()
+		self.x += 2
 
 	def save_highscore(self):
 		if self.score > int(self.highscore):
@@ -137,7 +144,7 @@ class Canvas:
 
 	def quit_message(self):
 		self.fps = 50
-		self.display.blit(self.game_over, (self.width/3, self.height*0.4))
+		self.display.blit(self.game_over, (self.width/2.5, self.height*0.4))
 		pygame.display.flip()
 		sleep(1)
 
@@ -174,7 +181,7 @@ class Canvas:
 				self.is_jump = False
 				self.velocity = 10
 
-	def load_images(self):
+	def load_images_and_audio(self):
 		self.dino_img1 = pygame.image.load('./data/dinos/run1.png').convert_alpha()
 		self.dino_img2 = pygame.image.load('./data/dinos/run2.png').convert_alpha()
 		self.dino_jump = pygame.image.load('./data/dinos/jump.png').convert_alpha()
@@ -192,6 +199,9 @@ class Canvas:
 		self.paused = pygame.image.load('./data/misc/paused.png').convert_alpha()
 		self.H_img = pygame.image.load('./data/numbers/H.png').convert_alpha()
 		self.I_img = pygame.image.load('./data/numbers/I.png').convert_alpha()
+
+		self.jump_sound = pygame.mixer.Sound('./data/sound/jump.wav')
+		self.game_over_sound = pygame.mixer.Sound('./data/sound/game_over.wav')
 
 		nums = [None for i in range(10)]
 		self.numbers = dict()
@@ -230,7 +240,10 @@ class Canvas:
 
 	def game_flow(self):
 		pygame.display.set_caption('T-Rex Rush')
-		self.load_images()
+		# sound link : https://freesound.org/people/djgriffin/sounds/172567/
+		main_music = pygame.mixer.Sound('./data/sound/game.wav')
+		main_music.play(-1)
+		self.load_images_and_audio()
 		# self.ground_load()
 		self.cactus_load()
 		self.loop()
