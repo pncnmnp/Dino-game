@@ -2,6 +2,14 @@ import pygame
 from time import sleep
 from random import shuffle, uniform
 
+'''
+TODO:
+>> pause feature
+>> high score feature [ done ]
+>> infinite vertical scrolling
+>> game sound
+'''
+
 class Characters(pygame.sprite.Sprite):
 	def __init__(self, pos, image):
 		super().__init__()
@@ -14,7 +22,7 @@ class Canvas:
 		self.width = 1250
 		self.height = 300
 		self.fps = 50
-		self.rel_height = 0.63
+		self.rel_height = 0.64
 		self.display = pygame.display.set_mode((self.width, self.height))
 		self.clock = pygame.time.Clock()
 		self.x = self.width * 0.005
@@ -36,6 +44,28 @@ class Canvas:
 		self.cactus_rect = list()
 		self.score = 0
 		self.score_jump = 10
+		self.highscore_file = './highscore.txt'
+		self.highscore = self.get_highscore()
+
+	def get_highscore(self):
+		try:
+			with open(self.highscore_file, 'r') as f:
+				return f.readlines()[0]
+		except:
+			self.highscore = 0
+
+	def update_score(self):
+		self.score_jump -= 1
+		if self.score_jump == 0:
+			self.score += 1
+			self.score_jump = 10
+		num_width = 0
+		for num in str(self.score):
+			self.display.blit(self.numbers[int(num)], (1050+num_width, self.height*0.10))
+			num_width += 20
+		if self.score > int(self.highscore):
+			self.display.blit(self.H_img, (1050+num_width+20, self.height*0.10))
+			self.display.blit(self.I_img, (1050+num_width+40, self.height*0.10))
 
 	def get_cloud_values(self):	
 		return [round(uniform(self.clouds[i][0], self.clouds[i][1]), 2) for i in range(3)]
@@ -56,16 +86,6 @@ class Canvas:
 
 	def sun_load(self):
 		self.display.blit(self.sun, (1000, self.height*0.30))
-
-	def update_score(self):
-		self.score_jump -= 1
-		if self.score_jump == 0:
-			self.score += 1
-			self.score_jump = 10
-		num_width = 0
-		for num in str(self.score):
-			self.display.blit(self.numbers[int(num)], (1050+num_width, self.height*0.10))
-			num_width += 20
 
 	def check_next_frame(self):
 		if self.x >= 1100:
@@ -97,9 +117,17 @@ class Canvas:
 			self.x += 2
 			pygame.display.update()
 			self.clock.tick(self.fps)
+		self.save_highscore()
 		self.quit_message()
 
+	def save_highscore(self):
+		if self.score > int(self.highscore):
+			with open(self.highscore_file, 'w') as f:
+				f.write(str(self.score))
+				f.close()
+
 	def quit_message(self):
+		self.fps = 50
 		self.display.blit(self.game_over, (self.width/3, self.height*0.4))
 		pygame.display.flip()
 		sleep(1)
@@ -115,9 +143,9 @@ class Canvas:
 
 	def load_elements(self):
 		self.sun_load()
-		self.update_score()
 		self.cloud_load()
 		self.cactus_load()
+		self.update_score()
 		self.dino()
 		self.ground_load()
 		self.check_next_frame()
@@ -152,6 +180,8 @@ class Canvas:
 		self.sun = pygame.image.load('./data/misc/sun.png').convert_alpha()
 		self.cloud = pygame.image.load('./data/misc/cloud.png').convert_alpha()
 		self.game_over = pygame.image.load('./data/misc/game_over.png').convert_alpha()
+		self.H_img = pygame.image.load('./data/numbers/H.png').convert_alpha()
+		self.I_img = pygame.image.load('./data/numbers/I.png').convert_alpha()
 
 		nums = [None for i in range(10)]
 		self.numbers = dict()
