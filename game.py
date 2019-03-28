@@ -7,6 +7,7 @@ class Characters(pygame.sprite.Sprite):
 		super().__init__()
 		self.image = image
 		self.rect = self.image.get_rect()
+		self.mask = pygame.mask.from_surface(self.image)
 
 class Canvas:
 	def __init__(self):
@@ -63,7 +64,7 @@ class Canvas:
 			self.score_jump = 10
 		num_width = 0
 		for num in str(self.score):
-			self.display.blit(self.numbers[int(num)], (1000+num_width, self.height*0.20))
+			self.display.blit(self.numbers[int(num)], (1050+num_width, self.height*0.10))
 			num_width += 20
 
 	def check_next_frame(self):
@@ -73,6 +74,7 @@ class Canvas:
 			self.x = self.width * 0.005
 			self.cactus_load()
 			self.cloud_pos = self.get_cloud_values()
+			self.fps += 5
 
 	def loop(self):
 		self.crashed = False
@@ -104,9 +106,12 @@ class Canvas:
 
 	def check_collision(self):
 		for cactus in self.cactus_rect:
+			offset_x = cactus[1].center[0] - self.dino_rect[1].center[0]
+			offset_y = cactus[1].center[1] - self.dino_rect[1].center[1]
 			if self.dino_rect[1].colliderect(cactus[1]):
-				self.crashed = True
-				# if pygame.sprite.collide_mask(self.dino_rect[0], cactus[0]):
+				result = (self.dino_rect[0].mask).overlap(cactus[0].mask, (offset_x, offset_y))
+				if result:
+					self.crashed = True
 
 	def load_elements(self):
 		self.sun_load()
@@ -152,7 +157,7 @@ class Canvas:
 		self.numbers = dict()
 
 		for num in range(len(nums)):
-			nums[num] = pygame.image.load('./data/numbers/'+str(num)+'.png').convert_alpha()
+			nums[num] = pygame.image.load('./data/numbers/'+str(num)+'.png')
 			self.numbers[num] = nums[num]
 
 		# arranged according to image, image_name, dist. from ground

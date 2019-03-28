@@ -1,0 +1,13 @@
+def check_collision(self):
+	cactus_gp = pygame.sprite.Group()
+	for cactus in self.cactus_rect:
+		cactus_gp.add(cactus[0])
+
+	for cactus in self.cactus_rect:
+		offset_x = self.dino_rect[1][0] - cactus[1][0]
+		offset_y = self.dino_rect[1][1] - cactus[1][1]
+		if self.dino_rect[1].colliderect(cactus[1]):
+			# if pygame.sprite.collide_mask(self.dino_rect[0], cactus[0]):
+			# if (self.dino_rect[0].mask).overlap(cactus[0].mask, (offset_x, offset_y)):
+			if pygame.sprite.spritecollide(self.dino_rect[0], cactus_gp, False, pygame.sprite.collide_mask):
+				self.crashed = True
