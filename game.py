@@ -10,6 +10,7 @@ TODO:
 >> pause feature [ done ]
 >> high score feature [ done ]
 >> game sound [ done ]
+>> start menu [ done ]
 '''
 
 class Characters(pygame.sprite.Sprite):
@@ -48,6 +49,7 @@ class Canvas:
 		self.score_jump = 10
 		self.highscore_file = './highscore.txt'
 		self.highscore = self.get_highscore()
+		self.scroll_ground = 1
 
 	def get_highscore(self):
 		try:
@@ -84,10 +86,16 @@ class Canvas:
 			self.display.blit(self.cloud, (int(self.width/4)*self.cloud_pos[index], self.height*0.30))
 
 	def ground_load(self):
-		self.display.blit(self.ground, (20, self.height*0.52 + 75))
+		pieceHeight, self.scroll_ground = self.ground.get_rect()[2], self.width
+		pieceY = self.scroll_ground%pieceHeight - pieceHeight
+		for movement in range(pieceY, self.width, pieceHeight):
+			self.display.blit(self.ground, (movement, self.height*0.52 + 75))
 
 	def sun_load(self):
 		self.display.blit(self.sun, (1000, self.height*0.30))
+
+	def space_to_start(self):
+		self.display.blit(self.space_bar, (self.width/2.5, self.height*0.4))
 
 	def check_next_frame(self):
 		if self.x >= 1100:
@@ -103,24 +111,30 @@ class Canvas:
 
 	def loop(self):
 		self.crashed = False
-		paused = False
+		paused, not_started = False, True
 		while self.crashed == False:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					self.crashed = True
 				if event.type == pygame.KEYDOWN:
-					if event.key == pygame.K_UP:
+					if event.key == pygame.K_SPACE and not_started == True:
+						not_started = not not_started
+					elif event.key == pygame.K_UP:
 						self.jump_sound.play()
 						if not self.is_duck:
 							if self.velocity == 1: self.velocity = 10
 							self.is_jump = True
-					if event.key == pygame.K_DOWN:
-						if not self.is_jump and not self.is_duck:
+					elif event.key == pygame.K_DOWN:
+						if not self.is_jump:
+							if self.is_duck == False:
+								self.y += self.duck_y
 							self.is_duck = True
-							self.y += self.duck_y
-					if event.key == pygame.K_p:
+					elif event.key == pygame.K_p:
+						self.pause_sound.play()
 						paused = not paused
-			if paused == False:
+			if not_started:
+				self.space_to_start()
+			elif paused == False:
 				self.not_paused()
 			elif paused == True:
 				self.load_paused_img()
@@ -134,7 +148,7 @@ class Canvas:
 		self.display.fill(self.PAINT)
 		self.load_elements()
 		self.check_collision()
-		self.x += 2
+		self.x += 3
 
 	def save_highscore(self):
 		if self.score > int(self.highscore):
@@ -146,7 +160,7 @@ class Canvas:
 		self.fps = 50
 		self.display.blit(self.game_over, (self.width/2.5, self.height*0.4))
 		pygame.display.flip()
-		sleep(1)
+		sleep(3)
 
 	def check_collision(self):
 		for cactus in self.cactus_rect:
@@ -194,6 +208,7 @@ class Canvas:
 		self.cactus5 = pygame.image.load('./data/cactus/c5.png').convert_alpha()
 		self.ground = pygame.image.load('./data/misc/ground.png').convert_alpha()
 		self.sun = pygame.image.load('./data/misc/sun.png').convert_alpha()
+		self.space_bar = pygame.image.load('./data/misc/space_to_start.png').convert_alpha()
 		self.cloud = pygame.image.load('./data/misc/cloud.png').convert_alpha()
 		self.game_over = pygame.image.load('./data/misc/game_over.png').convert_alpha()
 		self.paused = pygame.image.load('./data/misc/paused.png').convert_alpha()
@@ -202,6 +217,7 @@ class Canvas:
 
 		self.jump_sound = pygame.mixer.Sound('./data/sound/jump.wav')
 		self.game_over_sound = pygame.mixer.Sound('./data/sound/game_over.wav')
+		self.pause_sound = pygame.mixer.Sound('./data/sound/pause.wav')
 
 		nums = [None for i in range(10)]
 		self.numbers = dict()
@@ -211,17 +227,23 @@ class Canvas:
 			self.numbers[num] = nums[num]
 
 		# arranged according to image, image_name, dist. from ground
-		self.cactus_choose = [(self.cactus1, 'c1', 0), (self.cactus2, 'c2', 10), (self.cactus3, 'c3', 10), (self.cactus4, 'c4', 0), (self.cactus5, 'c5', 0)]
+		self.cactus_choose = [(self.cactus1, 'c1', 0), 
+							  (self.cactus2, 'c2', 10), 
+							  (self.cactus3, 'c3', 10), 
+							  (self.cactus4, 'c4', 0), 
+							  (self.cactus5, 'c5', 0)]
 
 	def dino(self):
 		if self.is_jump == True:
 			self.display.blit(self.dino_jump, (self.x, self.y))
-			self.dino_rect = (Characters((self.x, self.y), self.dino_jump), self.dino_jump.get_rect(center=(self.x, self.y)))
+			self.dino_rect = (Characters((self.x, self.y), self.dino_jump), 
+								self.dino_jump.get_rect(center=(self.x, self.y)))
 			self.jump()
 		elif self.is_duck == True:
 			if self.duck_choose > 0:
 				self.display.blit(self.dino_duck1, (self.x, self.y))
-				self.dino_rect = (Characters((self.x, self.y), self.dino_duck1), self.dino_duck1.get_rect(center=(self.x, self.y)))
+				self.dino_rect = (Characters((self.x, self.y), self.dino_duck1), 
+									self.dino_duck1.get_rect(center=(self.x, self.y)))
 			self.duck_count -= 1
 			if self.duck_count == 0:
 				self.duck_count = 10
@@ -229,11 +251,13 @@ class Canvas:
 				self.y -= self.duck_y
 		elif self.choose > 0:
 			self.display.blit(self.dino_img1, (self.x, self.y))
-			self.dino_rect = (Characters((self.x, self.y), self.dino_img1), self.dino_img1.get_rect(center=(self.x, self.y)))
+			self.dino_rect = (Characters((self.x, self.y), self.dino_img1), 
+								self.dino_img1.get_rect(center=(self.x, self.y)))
 			self.choose -= 1
 		elif self.choose <= 0:
 			self.display.blit(self.dino_img2, (self.x, self.y))
-			self.dino_rect = (Characters((self.x, self.y), self.dino_img2), self.dino_img2.get_rect(center=(self.x, self.y)))
+			self.dino_rect = (Characters((self.x, self.y), self.dino_img2), 
+								self.dino_img2.get_rect(center=(self.x, self.y)))
 			self.choose -= 1
 			if self.choose == -5:
 				self.choose *= -1
@@ -241,10 +265,12 @@ class Canvas:
 	def game_flow(self):
 		pygame.display.set_caption('T-Rex Rush')
 		# sound link : https://freesound.org/people/djgriffin/sounds/172567/
-		main_music = pygame.mixer.Sound('./data/sound/game.wav')
-		main_music.play(-1)
+		self.main_music = pygame.mixer.Sound('./data/sound/game.wav')
+		self.main_music.play(-1)
 		self.load_images_and_audio()
-		# self.ground_load()
+		self.sun_load()
+		self.cloud_load()
+		self.ground_load()
 		self.cactus_load()
 		self.loop()
 
