@@ -4,7 +4,7 @@ from random import shuffle, uniform
 
 '''
 TODO:
->> pause feature
+>> pause feature [ done ]
 >> high score feature [ done ]
 >> infinite vertical scrolling
 >> game sound
@@ -34,7 +34,7 @@ class Canvas:
 		self.duck_count = 10
 		self.PAINT = (150, 150, 150)
 		self.velocity = 10
-		self.mass = 0.6
+		self.mass = 0.4
 		self.duck_y = 20
 		self.dino_rect = None
 		self.pos = [0.5, 1, 2, 3, 1.5, 2.5]
@@ -96,8 +96,12 @@ class Canvas:
 			self.cloud_pos = self.get_cloud_values()
 			self.fps += 5
 
+	def load_paused_img(self):
+		self.display.blit(self.paused, (self.width/2.5, self.height*0.4))
+
 	def loop(self):
 		self.crashed = False
+		paused = False
 		while self.crashed == False:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -111,10 +115,15 @@ class Canvas:
 						if not self.is_jump and not self.is_duck:
 							self.is_duck = True
 							self.y += self.duck_y
-			self.display.fill(self.PAINT)
-			self.load_elements()
-			self.check_collision()
-			self.x += 2
+					if event.key == pygame.K_p:
+						paused = not paused
+			if paused == False:
+				self.display.fill(self.PAINT)
+				self.load_elements()
+				self.check_collision()
+				self.x += 2
+			elif paused == True:
+				self.load_paused_img()
 			pygame.display.update()
 			self.clock.tick(self.fps)
 		self.save_highscore()
@@ -180,6 +189,7 @@ class Canvas:
 		self.sun = pygame.image.load('./data/misc/sun.png').convert_alpha()
 		self.cloud = pygame.image.load('./data/misc/cloud.png').convert_alpha()
 		self.game_over = pygame.image.load('./data/misc/game_over.png').convert_alpha()
+		self.paused = pygame.image.load('./data/misc/paused.png').convert_alpha()
 		self.H_img = pygame.image.load('./data/numbers/H.png').convert_alpha()
 		self.I_img = pygame.image.load('./data/numbers/I.png').convert_alpha()
 
