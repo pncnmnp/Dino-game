@@ -3,3 +3,10 @@ def ground_load(self):
 	pieceY = self.scroll_ground%pieceHeight - pieceHeight
 	for movement in range(pieceY, self.width, pieceHeight):
 		self.display.blit(self.ground, (movement, self.height*0.52 + 75))
+
+def cactus_load(self):
+	self.cactus_rect = list()
+	for index in range(len(self.cactus_choose)):
+		coordinates = (int(self.width/4)*self.pos[index], self.height*0.52 + 40 + self.cactus_choose[index][2])
+		self.display.blit(self.cactus_choose[index][0], coordinates)
+		self.cactus_rect.append((Characters((self.x, self.y), self.cactus_choose[index][0]), self.cactus_choose[index][0].get_rect(center=coordinates)))

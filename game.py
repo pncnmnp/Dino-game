@@ -1,6 +1,6 @@
 import pygame
 from time import sleep
-from random import shuffle, uniform
+from random import shuffle, uniform, randint
 
 '''
 TODO:
@@ -45,6 +45,7 @@ class Canvas:
 		self.cloud_pos = self.get_cloud_values()
 		self.cactus_choose = list()
 		self.cactus_rect = list()
+		self.cactus_curr_img = None
 		self.score = 0
 		self.score_jump = 10
 		self.highscore_file = './highscore.txt'
@@ -76,11 +77,22 @@ class Canvas:
 			num_width += 20
 
 	def cactus_load(self):
-		self.cactus_rect = list()
-		for index in range(len(self.cactus_choose)):
-			coordinates = (int(self.width/4)*self.pos[index], self.height*0.52 + 40 + self.cactus_choose[index][2])
-			self.display.blit(self.cactus_choose[index][0], coordinates)
-			self.cactus_rect.append((Characters((self.x, self.y), self.cactus_choose[index][0]), self.cactus_choose[index][0].get_rect(center=coordinates)))
+		rand_index = randint(0, 4)
+		self.cactus_curr_img = self.cactus_choose[rand_index][0]
+		self.cactus_rect = self.cactus_choose[rand_index][0].get_rect()
+		self.cactus_rect.bottom = self.height*0.52 + 80 + self.cactus_choose[rand_index][2]
+		self.cactus_rect.left = self.width + self.cactus_rect.width
+
+	def cactus_draw(self):
+		self.display.blit(self.cactus_curr_img, self.cactus_rect)
+
+	def cactus_update(self):
+		move = [-4, 0]
+		self.cactus_rect = self.cactus_rect.move(move)
+		self.cactus_obj = Characters((self.x, self.y), self.cactus_curr_img)
+		if self.cactus_rect.right < 0:
+			# self.kill()
+			pass
 
 	def ground_load(self):
 		self.ground_rect, self.ground_rect1 = self.ground.get_rect(), self.ground.get_rect()
@@ -116,7 +128,6 @@ class Canvas:
 	def check_next_frame(self):
 		if self.x >= self.width-100:
 			shuffle(self.pos)
-			shuffle(self.cactus_choose)
 			self.x = self.width * 0.005
 			self.cactus_load()
 			self.cloud_pos = self.get_cloud_values()
@@ -179,23 +190,24 @@ class Canvas:
 		sleep(3)
 
 	def check_collision(self):
-		for cactus in self.cactus_rect:
-			offset_x = cactus[1].center[0] - self.dino_rect[1].center[0]
-			offset_y = cactus[1].center[1] - self.dino_rect[1].center[1]
-			if self.dino_rect[1].colliderect(cactus[1]):
-				result = (self.dino_rect[0].mask).overlap(cactus[0].mask, (offset_x, offset_y))
-				if result:
-					self.crashed = True
+		offset_x = self.cactus_rect.center[0] - self.dino_rect[1].center[0]
+		offset_y = self.cactus_rect.center[1] - self.dino_rect[1].center[1]
+		if self.dino_rect[1].colliderect(self.cactus_rect):
+			result = (self.dino_rect[0].mask).overlap(self.cactus_obj.mask, (offset_x, offset_y))
+			if result:
+				self.crashed = True
 
 	def load_elements(self):
 		self.sun_load()
 		self.update_score()
 		self.cloud_load()
-		self.cactus_load()
+		self.cactus_draw()
+		self.cactus_update()
 		self.dino()
 		self.ground_update()
 		self.ground_draw()
 		self.check_next_frame()
+		shuffle(self.cactus_choose)
 
 	def jump(self):
 		if self.is_jump:
