@@ -20,6 +20,33 @@ class Characters(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.mask = pygame.mask.from_surface(self.image)
 
+class Cactus:
+	def __init__(self, width, height, pos, cactus_choose, display, x, y):
+		self.cactus_curr_img = None
+		self.cactus_rect = None
+		self.cactus_obj = None
+		self.width, self.height = width, height
+		self.pos, self.cactus_choose = pos, cactus_choose
+		self.display, self.x, self.y = display, x, y
+
+	def cactus_load(self, spacing):
+		rand_index = randint(0, 4)
+		coordinates = (int(self.width/3)*self.pos[rand_index], self.height*0.52 + 80 + self.cactus_choose[rand_index][2])
+		self.cactus_curr_img = self.cactus_choose[rand_index][0]
+		self.cactus_rect = self.cactus_choose[rand_index][0].get_rect(center=coordinates)
+		self.cactus_rect.bottom = self.height*0.52 + 80 + self.cactus_choose[rand_index][2]
+		self.cactus_rect.left = self.width + self.cactus_rect.width + spacing
+
+	def cactus_draw(self):
+		self.display.blit(self.cactus_curr_img, self.cactus_rect)
+
+	def cactus_update(self):
+		move = [-4, 0]
+		self.cactus_rect = self.cactus_rect.move(move)
+		self.cactus_obj = Characters((self.x, self.y), self.cactus_curr_img)
+		if self.cactus_rect.right < 0:
+			pass
+
 class Canvas:
 	def __init__(self):
 		self.width = 900
@@ -44,8 +71,8 @@ class Canvas:
 		self.clouds = [(0.5, 0.8), (1.3, 1.7), (2, 2.4)]
 		self.cloud_pos = self.get_cloud_values()
 		self.cactus_choose = list()
-		self.cactus_rect = list()
-		self.cactus_curr_img = None
+		# self.cactus_rect = list()
+		# self.cactus_curr_img = None
 		self.score = 0
 		self.score_jump = 10
 		self.highscore_file = './highscore.txt'
@@ -77,22 +104,15 @@ class Canvas:
 			num_width += 20
 
 	def cactus_load(self):
-		rand_index = randint(0, 4)
-		self.cactus_curr_img = self.cactus_choose[rand_index][0]
-		self.cactus_rect = self.cactus_choose[rand_index][0].get_rect()
-		self.cactus_rect.bottom = self.height*0.52 + 80 + self.cactus_choose[rand_index][2]
-		self.cactus_rect.left = self.width + self.cactus_rect.width
-
-	def cactus_draw(self):
-		self.display.blit(self.cactus_curr_img, self.cactus_rect)
-
-	def cactus_update(self):
-		move = [-4, 0]
-		self.cactus_rect = self.cactus_rect.move(move)
-		self.cactus_obj = Characters((self.x, self.y), self.cactus_curr_img)
-		if self.cactus_rect.right < 0:
-			# self.kill()
-			pass
+		self.cac1, self.cac2, self.cac3, self.cac4 = None, None, None, None
+		self.cactuses = [self.cac1, self.cac2, self.cac3, self.cac4]
+		spacings = [randint(0, 50), randint(150, 350), randint(450, 650), randint(750, 800)]
+		for cac, spacing, index in zip(self.cactuses, spacings, range(len(spacings))):
+			cac = Cactus(self.width, self.height, self.pos, self.cactus_choose, self.display, self.x, self.y)
+			cac.cactus_load(spacing)
+			cac.cactus_draw()
+			cac.cactus_update()
+			self.cactuses[index] = cac
 
 	def ground_load(self):
 		self.ground_rect, self.ground_rect1 = self.ground.get_rect(), self.ground.get_rect()
@@ -190,19 +210,25 @@ class Canvas:
 		sleep(3)
 
 	def check_collision(self):
-		offset_x = self.cactus_rect.center[0] - self.dino_rect[1].center[0]
-		offset_y = self.cactus_rect.center[1] - self.dino_rect[1].center[1]
-		if self.dino_rect[1].colliderect(self.cactus_rect):
-			result = (self.dino_rect[0].mask).overlap(self.cactus_obj.mask, (offset_x, offset_y))
-			if result:
-				self.crashed = True
+		for cactus in self.cactuses:
+			offset_x = cactus.cactus_rect.center[0] - self.dino_rect[1].center[0]
+			offset_y = cactus.cactus_rect.center[1] - self.dino_rect[1].center[1]
+			if self.dino_rect[1].colliderect(cactus.cactus_rect):
+				result = (self.dino_rect[0].mask).overlap(cactus.cactus_obj.mask, (offset_x, offset_y))
+				if result:
+					self.crashed = True
+
+	def cactus_refresh(self):
+		for cactus in self.cactuses:
+			cactus.cactus_draw()
+		for cactus in self.cactuses:
+			cactus.cactus_update()
 
 	def load_elements(self):
 		self.sun_load()
 		self.update_score()
 		self.cloud_load()
-		self.cactus_draw()
-		self.cactus_update()
+		self.cactus_refresh()
 		self.dino()
 		self.ground_update()
 		self.ground_draw()
@@ -298,10 +324,10 @@ class Canvas:
 		self.main_music.play(-1)
 		self.load_images_and_audio()
 		self.sun_load()
+		self.cactus_load()
 		self.cloud_load()
 		self.ground_load()
 		self.ground_draw()
-		self.cactus_load()
 		self.loop()
 
 if __name__ == '__main__':
