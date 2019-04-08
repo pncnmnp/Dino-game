@@ -1,3 +1,5 @@
+Some of my previous methods for reference
+
 def ground_load(self):
 	pieceHeight, self.scroll_ground = self.ground.get_rect()[2], self.width
 	pieceY = self.scroll_ground%pieceHeight - pieceHeight

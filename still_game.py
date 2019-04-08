@@ -1,6 +1,6 @@
 import pygame
 from time import sleep
-from random import shuffle, uniform, randint
+from random import shuffle, uniform
 
 '''
 TODO:
@@ -17,39 +17,12 @@ class Characters(pygame.sprite.Sprite):
 	def __init__(self, pos, image):
 		super().__init__()
 		self.image = image
-		self.rect = self.image.get_rect(center=pos)
+		self.rect = self.image.get_rect()
 		self.mask = pygame.mask.from_surface(self.image)
-
-class Cactus:
-	def __init__(self, width, height, pos, cactus_choose, display, x, y):
-		self.cactus_curr_img = None
-		self.cactus_rect = None
-		self.cactus_obj = None
-		self.width, self.height = width, height
-		self.pos, self.cactus_choose = pos, cactus_choose
-		self.display, self.x, self.y = display, x, y
-		self.rand_index = randint(0, 4)
-
-	def cactus_load(self, spacing):
-		coordinates = (int(self.width/3)*self.pos[self.rand_index], self.height*0.52 + 80 + self.cactus_choose[self.rand_index][2])
-		self.cactus_curr_img = self.cactus_choose[self.rand_index][0]
-		self.cactus_rect = self.cactus_choose[self.rand_index][0].get_rect(center=coordinates)
-		self.cactus_rect.bottom = self.height*0.52 + 80 + self.cactus_choose[self.rand_index][2]
-		self.cactus_rect.left = self.width + self.cactus_rect.width + spacing
-		# self.cactus_obj = Characters((self.x, self.y), self.cactus_curr_img)
-
-	def cactus_draw(self):
-		self.display.blit(self.cactus_curr_img, self.cactus_rect)
-
-	def cactus_update(self):
-		move = [-4, 0]
-		self.cactus_rect = self.cactus_rect.move(move)
-		if self.cactus_rect.right < 0:
-			pass
 
 class Canvas:
 	def __init__(self):
-		self.width = 900
+		self.width = 1250
 		self.height = 300
 		self.fps = 50
 		self.rel_height = 0.64
@@ -71,6 +44,7 @@ class Canvas:
 		self.clouds = [(0.5, 0.8), (1.3, 1.7), (2, 2.4)]
 		self.cloud_pos = self.get_cloud_values()
 		self.cactus_choose = list()
+		self.cactus_rect = list()
 		self.score = 0
 		self.score_jump = 10
 		self.highscore_file = './highscore.txt'
@@ -89,64 +63,44 @@ class Canvas:
 		if self.score_jump == 0:
 			self.score += 1
 			self.score_jump = 10
-		num_width, relative = 0, self.width-300
-		self.display.blit(self.H_img, (relative+num_width+20, self.height*0.10))
-		self.display.blit(self.I_img, (relative+num_width+40, self.height*0.10))
-		num_width += 80
-		for num in str(self.highscore):
-			self.display.blit(self.numbers[int(num)], (relative+num_width, self.height*0.10))
-			num_width += 20
-		num_width += 60
+		num_width = 0
 		for num in str(self.score):
-			self.display.blit(self.numbers[int(num)], (relative+num_width, self.height*0.10))
+			self.display.blit(self.numbers[int(num)], (1050+num_width, self.height*0.10))
 			num_width += 20
+		if self.score > int(self.highscore):
+			self.display.blit(self.H_img, (1050+num_width+20, self.height*0.10))
+			self.display.blit(self.I_img, (1050+num_width+40, self.height*0.10))
+
+	def get_cloud_values(self):	
+		return [round(uniform(self.clouds[i][0], self.clouds[i][1]), 2) for i in range(3)]
 
 	def cactus_load(self):
-		self.cac1, self.cac2, self.cac3, self.cac4 = None, None, None, None
-		self.cactuses = [self.cac1, self.cac2, self.cac3, self.cac4]
-		spacings = [randint(-400, -200), randint(0, 150), randint(300, 500), randint(650, 750)]
-		for cac, spacing, index in zip(self.cactuses, spacings, range(len(spacings))):
-			cac = Cactus(self.width, self.height, self.pos, self.cactus_choose, self.display, self.x, self.y)
-			cac.cactus_obj = Characters((self.x, self.y), self.cactus_choose[cac.rand_index][0])
-			cac.cactus_load(spacing)
-			cac.cactus_update()
-			cac.cactus_draw()
-			self.cactuses[index] = cac
-
-	def ground_load(self):
-		self.ground_rect, self.ground_rect1 = self.ground.get_rect(), self.ground.get_rect()
-		self.ground_rect.bottom, self.ground_rect1.bottom = self.height*0.52 + 90, self.height*0.52 + 90
-		self.ground_rect.left = self.ground_rect1.right
-
-	def ground_draw(self):
-		self.display.blit(self.ground, self.ground_rect)
-		self.display.blit(self.ground, self.ground_rect1)
-
-	def ground_update(self):
-		speed = -4
-		self.ground_rect.left += speed
-		self.ground_rect1.left += speed
-		if self.ground_rect.right < 0:
-			self.ground_rect.left = self.ground_rect1.right
-		if self.ground_rect1.right < 0:
-			self.ground_rect1.left = self.ground_rect.right
+		self.cactus_rect = list()
+		for index in range(len(self.cactus_choose)):
+			coordinates = (int(self.width/4)*self.pos[index], self.height*0.52 + 40 + self.cactus_choose[index][2])
+			self.display.blit(self.cactus_choose[index][0], coordinates)
+			self.cactus_rect.append((Characters((self.x, self.y), self.cactus_choose[index][0]), self.cactus_choose[index][0].get_rect(center=coordinates)))
 
 	def cloud_load(self):
 		for index in range(len(self.cloud_pos)):
 			self.display.blit(self.cloud, (int(self.width/4)*self.cloud_pos[index], self.height*0.30))
 
-	def get_cloud_values(self):	
-		return [round(uniform(self.clouds[i][0], self.clouds[i][1]), 2) for i in range(len(self.clouds))]
+	def ground_load(self):
+		pieceHeight, self.scroll_ground = self.ground.get_rect()[2], self.width
+		pieceY = self.scroll_ground%pieceHeight - pieceHeight
+		for movement in range(pieceY, self.width, pieceHeight):
+			self.display.blit(self.ground, (movement, self.height*0.52 + 75))
 
 	def sun_load(self):
-		self.display.blit(self.sun, (self.width-200, self.height*0.30))
+		self.display.blit(self.sun, (1000, self.height*0.30))
 
 	def space_to_start(self):
-		self.display.blit(self.space_bar, (self.width/3, self.height*0.4))
+		self.display.blit(self.space_bar, (self.width/2.5, self.height*0.4))
 
 	def check_next_frame(self):
-		if self.x >= self.width-100:
+		if self.x >= 1100:
 			shuffle(self.pos)
+			shuffle(self.cactus_choose)
 			self.x = self.width * 0.005
 			self.cactus_load()
 			self.cloud_pos = self.get_cloud_values()
@@ -194,7 +148,7 @@ class Canvas:
 		self.display.fill(self.PAINT)
 		self.load_elements()
 		self.check_collision()
-		self.x += 1.5
+		self.x += 3
 
 	def save_highscore(self):
 		if self.score > int(self.highscore):
@@ -209,30 +163,22 @@ class Canvas:
 		sleep(3)
 
 	def check_collision(self):
-		for cactus in self.cactuses:
-			offset_x = cactus.cactus_rect.center[0] - self.dino_rect[1].center[0]
-			offset_y = cactus.cactus_rect.center[1] - self.dino_rect[1].center[1]
-			if self.dino_rect[1].colliderect(cactus.cactus_rect):
-				result = (self.dino_rect[0].mask).overlap(cactus.cactus_obj.mask, (offset_x, offset_y))
+		for cactus in self.cactus_rect:
+			offset_x = cactus[1].center[0] - self.dino_rect[1].center[0]
+			offset_y = cactus[1].center[1] - self.dino_rect[1].center[1]
+			if self.dino_rect[1].colliderect(cactus[1]):
+				result = (self.dino_rect[0].mask).overlap(cactus[0].mask, (offset_x, offset_y))
 				if result:
 					self.crashed = True
 
-	def cactus_refresh(self):
-		for cactus in self.cactuses:
-			cactus.cactus_update()
-		for cactus in self.cactuses:
-			cactus.cactus_draw()
-
 	def load_elements(self):
 		self.sun_load()
-		self.update_score()
 		self.cloud_load()
-		self.cactus_refresh()
+		self.cactus_load()
+		self.update_score()
 		self.dino()
-		self.ground_update()
-		self.ground_draw()
+		self.ground_load()
 		self.check_next_frame()
-		shuffle(self.cactus_choose)
 
 	def jump(self):
 		if self.is_jump:
@@ -323,10 +269,9 @@ class Canvas:
 		self.main_music.play(-1)
 		self.load_images_and_audio()
 		self.sun_load()
-		self.cactus_load()
 		self.cloud_load()
 		self.ground_load()
-		self.ground_draw()
+		self.cactus_load()
 		self.loop()
 
 if __name__ == '__main__':
